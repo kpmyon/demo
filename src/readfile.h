@@ -10,3 +10,4 @@
 #include <string>
 
 std::string readFile();
+std::string getName(std::string path);

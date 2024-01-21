@@ -9,6 +9,7 @@ void string2faceInfo(std::string string, int& v, int& vt, int& vn);
  * @param readFromFile 为true时会从指定路径读取模型
  * @param vertexPositions 读取出来的顶点坐标信息
  * @param faceIndices 读取出来的面信息
+ * @param path 待读取的文件路径
  */
 
 void meshGenerate(bool readFromFile, std::vector<glm::vec3>& vertexPositions,

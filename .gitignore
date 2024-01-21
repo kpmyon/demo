@@ -58,3 +58,4 @@ CTestTestfile.cmake
 # 用户自定义的其他忽略文件
 *.zip
 *.log
+*.ini

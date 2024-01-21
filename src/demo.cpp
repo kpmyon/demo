@@ -13,26 +13,52 @@
 #include <vector>
 
 #include "meshGen.h"
-
+#include "polyscope/camera_view.h"
+#include "polyscope/options.h"
 #include "polyscope/polyscope.h"
-
 #include "polyscope/surface_mesh.h"
-
 #include "readfile.h"
 
+std::vector<glm::vec3> vertexPositions;
+std::vector<std::vector<size_t>> faceIndices;
+std::string path = readFile();
+
+void myCallback();
 
 int main() {
   // Initialize Polyscope
   polyscope::init();
-  std::vector<glm::vec3> vertexPositions;
-  std::vector<std::vector<size_t>> faceIndices;
+  polyscope::state::userCallback = myCallback;
+  // polyscope::options::autocenterStructures = true;
+  // polyscope::options::autoscaleStructures = true;
 
-  std::string path = readFile();
+  meshGenerate(true, vertexPositions, faceIndices, path);
 
-  meshGenerate(true, vertexPositions, faceIndices,path);
-
-  auto* psMesh = polyscope::registerSurfaceMesh("simple triangle",
-                                                vertexPositions, faceIndices);
+  auto* psMesh = polyscope::registerSurfaceMesh(getName(path), vertexPositions,
+                                                faceIndices);
   // Show the gui
   polyscope::show();
+}
+
+// Your callback functions
+void myCallback() {
+  // Since options::openImGuiWindowForUserCallback == true by default,
+  // we can immediately start using ImGui commands to build a UI
+
+  ImGui::PushItemWidth(100);  // Make ui elements 100 pixels wide,
+                              // instead of full width. Must have
+                              // matching PopItemWidth() below.
+
+  if (ImGui::Button("reloadMesh")) {
+    // executes when button is pressed
+    polyscope::removeSurfaceMesh(getName(path));
+    path = readFile();
+    vertexPositions.clear();
+    faceIndices.clear();
+    meshGenerate(true, vertexPositions, faceIndices, path);
+    polyscope::registerSurfaceMesh(getName(path), vertexPositions, faceIndices);
+    polyscope::view::flyToHomeView();
+  }
+
+  ImGui::PopItemWidth();
 }

@@ -1,27 +1,7 @@
 #include "readfile.h"
 
-/**
- * @brief 将宽类型字符串转化为string
- *
- * @param lpcwszStr 待转化字符串
- * @return std::string 转化后的字符串
- */
-std::string WCharToMByte(LPCWSTR lpcwszStr) {
-  std::string str;
-  DWORD dwMinSize = 0;
-  LPSTR lpszStr = nullptr;
-  dwMinSize = WideCharToMultiByte(CP_OEMCP, NULL, lpcwszStr, -1, nullptr, 0,
-                                  nullptr, FALSE);
-  if (0 == dwMinSize) {
-    return FALSE;
-  }
-  lpszStr = new char[dwMinSize];
-  WideCharToMultiByte(CP_OEMCP, NULL, lpcwszStr, -1, lpszStr, dwMinSize,
-                      nullptr, FALSE);
-  str = lpszStr;
-  delete[] lpszStr;
-  return str;
-}
+#include <filesystem>
+#include <string>
 
 /**
  * @brief 弹出选择模型文件的窗体，并返回选择的文件的路径
@@ -30,7 +10,7 @@ std::string WCharToMByte(LPCWSTR lpcwszStr) {
  * @return std::string 返回的文件的路径
  */
 std::string readFile() {
-  std::string path;
+  std::filesystem::path path;
   // TODO 未完成
   CoInitialize(nullptr);
   IFileDialog* pfd = nullptr;
@@ -59,7 +39,7 @@ std::string readFile() {
         if (SUCCEEDED(hr)) {
           // 读取到的路径存在pszFilePath中
           // MessageBoxW(nullptr, pszFilePath, L"File Path", MB_OK);
-          path = WCharToMByte(pszFilePath);
+          path = pszFilePath;
           CoTaskMemFree(pszFilePath);
         }
       }
@@ -68,5 +48,15 @@ std::string readFile() {
     pfd->Release();
   }
 
-  return path;
+  return path.string();
+}
+/**
+ * @brief 输入文件路径，返回路径中包含的文件名
+ *
+ * @param path 输入的路径
+ * @return std::string 路径包含的文件名
+ */
+std::string getName(const std::string path) {
+  std::filesystem::path filePath = std::filesystem::path(path);
+  return filePath.filename().string();
 }
