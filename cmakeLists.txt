@@ -17,7 +17,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
 
 
 #设置编译目标
-add_executable(demo src/demo.cpp)
+aux_source_directory(src source)
+add_executable(demo ${source})
+
 
 #设置外部库
 add_subdirectory("external/polyscope")
