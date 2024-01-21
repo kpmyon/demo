@@ -1,6 +1,5 @@
 #include "meshGen.h"
 
-
 void defaultMeshGenerate(std::vector<glm::vec3>& vertexPositions,
                          std::vector<std::vector<size_t>>& faceIndices);
 void string2faceInfo(std::string string, int& v, int& vt, int& vn);
@@ -13,17 +12,19 @@ void string2faceInfo(std::string string, int& v, int& vt, int& vn);
  */
 
 void meshGenerate(bool readFromFile, std::vector<glm::vec3>& vertexPositions,
-                  std::vector<std::vector<size_t>>& faceIndices) {
+                  std::vector<std::vector<size_t>>& faceIndices,
+                  const std ::string path) {
   if (!readFromFile) {
     defaultMeshGenerate(vertexPositions, faceIndices);
     return;
   }
 
-  // TODO 修改path的获取方式
-  std::string path =
-      "E:/source/instrinsic-simplification/intrinsic-simplification/meshes/"
-      "resource/shan.obj";
-
+  /*
+    // TODO 修改path的获取方式
+    std::string path =
+        "E:/source/instrinsic-simplification/intrinsic-simplification/meshes/"
+        "resource/shan.obj";
+  */
   if (path.empty()) {
     std::cout << "path is empty"
               << "\n";

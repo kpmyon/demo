@@ -27,7 +27,9 @@ int main() {
   std::vector<glm::vec3> vertexPositions;
   std::vector<std::vector<size_t>> faceIndices;
 
-  meshGenerate(true, vertexPositions, faceIndices);
+  std::string path = readFile();
+
+  meshGenerate(true, vertexPositions, faceIndices,path);
 
   auto* psMesh = polyscope::registerSurfaceMesh("simple triangle",
                                                 vertexPositions, faceIndices);
