@@ -1,4 +1,3 @@
-
 #include <Shlobj.h>
 #include <minwindef.h>
 #include <stringapiset.h>
@@ -8,7 +7,6 @@
 #include <winnt.h>
 
 #include <algorithm>
-#include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -18,11 +16,8 @@
 #include <vector>
 
 #include "glm/fwd.hpp"
-#include "glm/gtx/transform.hpp"
-#include "glm/matrix.hpp"
 #include "imgui.h"
 #include "meshGen.h"
-#include "polyscope/camera_view.h"
 #include "polyscope/polyscope.h"
 #include "polyscope/surface_mesh.h"
 #include "readfile.h"
@@ -35,7 +30,7 @@
 std::vector<glm::vec3> vertexPositions;
 std::vector<std::vector<size_t>> faceIndices;
 std::string path = "default";
-static char inputPath[InputLength] = "";
+static char inputPath[InputLength] = "default";
 // static char inputScale[InputLength] = "";
 float inputScale = 1;
 std::pmr::map<polyscope::SurfaceMesh*, float> initialScale;
@@ -43,6 +38,7 @@ std::pmr::map<polyscope::SurfaceMesh*, float> currScale;
 
 void myCallback();
 void newMesh();
+void removeMesh();
 void rotate(glm::vec3 axis, float angle);
 void scale(const float scale);
 void transform(const float angle, const glm::vec3 axis, const glm::vec3 move,
@@ -61,7 +57,11 @@ int main() {
   polyscope::show();
 }
 
-// Your callback functions
+/**
+ * @brief 注册UI组件的回调函数
+ *
+ *
+ */
 void myCallback() {
   // Since options::openImGuiWindowForUserCallback == true by default,
   // we can immediately start using ImGui commands to build a UI
@@ -72,15 +72,9 @@ void myCallback() {
 
   ImGui::InputText("mesh", inputPath, InputLength);
 
-  // ImGui::InputText("scale", inputScale, InputLength);
-  /*
-  ImGui::SliderFloat(
-      "scale", &inputScale, 0.1f, 10.0f, "%.5f",
-      ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat);
-      */
   if (ImGui::Button("reloadMesh")) {
     // executes when button is pressed
-    polyscope::removeSurfaceMesh(getName(path));
+    removeMesh();
     newMesh();
   }
   ImGui::SameLine();
@@ -91,6 +85,13 @@ void myCallback() {
     }
     newMesh();
   }
+  if (ImGui::Button("removeMesh")) {
+    // executes when button is pressed
+    removeMesh();
+  }
+
+  ImGui::LabelText("rotate label", "rotate:");
+  ImGui::SameLine();
   if (ImGui::Button("X")) {
     // executes when button is pressed
     rotate(X, 90.0);
@@ -110,19 +111,6 @@ void myCallback() {
     scale(inputScale);
   }
   ImGui::SameLine();
-  /*
-  if (ImGui::Button("reset scale")) {
-    // executes when button is pressed
-    std::string inputPathStr(inputPath);
-    auto* psMesh = polyscope::getSurfaceMesh(inputPathStr);
-    psMesh->rescaleToUnit();
-    polyscope::view::lookAt(glm::vec3(1.5, 1.5, 3), glm::vec3(0.0, 0.0, 0.0));
-  }
-  */
-  /*
-  ImGui::SameLine();
-  if (ImGui::InputFloat("scale value", &inputScale)) {
-  }*/
 
   ImGui::SliderFloat(
       "scale value", &inputScale, 0.1f, 10.0f, "%.3f",
@@ -130,6 +118,11 @@ void myCallback() {
 
   ImGui::PopItemWidth();
 }
+
+/**
+ * @brief 读取模型文件生成网格并渲染
+ *
+ */
 void newMesh() {
   path = readFile();
   std::strcpy(inputPath, getName(path).c_str());
@@ -147,18 +140,24 @@ void newMesh() {
   initialScale.insert(std::pair<polyscope::SurfaceMesh*, float>(psMesh, 1.0));
   currScale.insert(std::pair<polyscope::SurfaceMesh*, float>(psMesh, 1.0));
 }
-void move(const glm::vec3 move) {
-  transform(0,X,move,1);
-}
+/**
+ * @brief 删除inputPath对应的网格
+ *
+ */
+void removeMesh() { polyscope::removeSurfaceMesh(getName(inputPath)); }
+
+void move(const glm::vec3 move) { transform(0, X, move, 1); }
+
 void rotate(const glm::vec3 axis, const float angle) {
-  transform(angle, axis, glm::vec3(0.0, 0.0, 0.0),1);
+  transform(angle, axis, glm::vec3(0.0, 0.0, 0.0), 1);
 }
 void scale(const float scale) {
-  transform(0,X,glm::vec3(0.0,0.0,0.0),scale);
+  transform(0, X, glm::vec3(0.0, 0.0, 0.0), scale);
 }
+
 /**
  * @brief 变换inputPath对应的网格的顶点坐标
- * 
+ *
  * @param angle 旋转角度，使用角度制（大概）
  * @param axis 选择轴
  * @param move 平移向量
