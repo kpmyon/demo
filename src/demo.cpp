@@ -20,6 +20,7 @@
 #include "meshGen.h"
 #include "polyscope/polyscope.h"
 #include "polyscope/surface_mesh.h"
+#include "polyscope/view.h"
 #include "readfile.h"
 
 #define InputLength 128
@@ -42,7 +43,7 @@ void removeMesh();
 void rotate(glm::vec3 axis, float angle);
 void scale(const float scale);
 void transform(const float angle, const glm::vec3 axis, const glm::vec3 move,
-               const float scale);
+               const float scale, std::string name);
 
 int main() {
   // Initialize Polyscope
@@ -129,14 +130,16 @@ void newMesh() {
   if (path.empty()) {
     return;
   }
+
   vertexPositions.clear();
   faceIndices.clear();
   meshGenerate(true, vertexPositions, faceIndices, path);
-  polyscope::registerSurfaceMesh(getName(path), vertexPositions, faceIndices);
-  auto* psMesh = polyscope::getSurfaceMesh(getName(path));
-  psMesh->centerBoundingBox();
-  psMesh->rescaleToUnit();
-  polyscope::view::flyToHomeView();
+  auto* psMesh = polyscope::registerSurfaceMesh(getName(path), vertexPositions,
+                                             faceIndices);
+
+  transform(0, X, -std::get<0>(psMesh->boundingBox()), 1, psMesh->getName());
+  // psMesh->rescaleToUnit();
+  polyscope::view::lookAt(glm::vec3(1.5, 0, 1), glm::vec3(0));
   initialScale.insert(std::pair<polyscope::SurfaceMesh*, float>(psMesh, 1.0));
   currScale.insert(std::pair<polyscope::SurfaceMesh*, float>(psMesh, 1.0));
 }
@@ -146,13 +149,13 @@ void newMesh() {
  */
 void removeMesh() { polyscope::removeSurfaceMesh(getName(inputPath)); }
 
-void move(const glm::vec3 move) { transform(0, X, move, 1); }
+void move(const glm::vec3 move) { transform(0, X, move, 1, getName(path)); }
 
 void rotate(const glm::vec3 axis, const float angle) {
-  transform(angle, axis, glm::vec3(0.0, 0.0, 0.0), 1);
+  transform(angle, axis, glm::vec3(0.0, 0.0, 0.0), 1, getName(path));
 }
 void scale(const float scale) {
-  transform(0, X, glm::vec3(0.0, 0.0, 0.0), scale);
+  transform(0, X, glm::vec3(0.0, 0.0, 0.0), scale, getName(path));
 }
 
 /**
@@ -161,10 +164,11 @@ void scale(const float scale) {
  * @param angle 旋转角度，使用角度制（大概）
  * @param axis 选择轴
  * @param move 平移向量
- * @param scale 缩放值
+ * @param scale 相对于当前大小的放大系数
+ * @param name 待变换模型名
  */
 void transform(const float angle, const glm::vec3 axis, const glm::vec3 move,
-               const float scale) {
+               const float scale, const std::string name) {
   std::string inputPathStr(inputPath);
   if (!polyscope::hasSurfaceMesh(inputPathStr)) {
     return;
@@ -175,7 +179,7 @@ void transform(const float angle, const glm::vec3 axis, const glm::vec3 move,
 
   std::for_each(vertexPositions.rbegin(), oldVertexPosition.rend(),
                 [](glm::vec3& point) {
-                  // TODO 遍历旧顶点，生成变换后的顶点
+                  // TODO 遍历旧顶点，生成变换后的顶点,并更新currScale
                 });
 
   psMesh->updateVertexPositions(newVertexPosition);
