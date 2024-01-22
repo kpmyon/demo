@@ -43,7 +43,7 @@ void meshGenerate(bool readFromFile, std::vector<glm::vec3>& vertexPositions,
   std::string buf;
   std::vector<std::string> slice;
   std::istringstream istringstream;
-  int line = 1;
+  int line = 0;
   // 循环读取文件的每一行到buf中，并进行处理直至文件末尾
   while (std::getline(fin, buf)) {
     if (buf.empty()) {
@@ -90,6 +90,10 @@ void meshGenerate(bool readFromFile, std::vector<glm::vec3>& vertexPositions,
       // TODO
     } else if (slice.front().at(0) == '#') {
       continue;
+    } else if (slice.front() == "mtllib") {
+      // TODO
+    } else if (slice.front() == "usemtl") {
+      // TODO
     }
   }
   fin.close();
@@ -155,7 +159,10 @@ void string2faceInfo(std::string string, int& v, int& vt, int& vn) {
     }
   } else {
     // 解析f v1//vn1 v2//vn2 v3//vn3这种形式，此时传入的string相当于v//vn
-    string.replace(0, 2, " ");
+
+    while ((pos = string.find("//")) != std::string::npos) {
+      string.replace(pos, 2, " ");
+    }
     istringstream.clear();
     istringstream.str(string);
     istringstream >> v >> vn;
