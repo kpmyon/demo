@@ -59,3 +59,4 @@ CTestTestfile.cmake
 *.zip
 *.log
 *.ini
+*.diff

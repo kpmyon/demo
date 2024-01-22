@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <map>
 #include <string>
 #include <utility>
@@ -34,8 +35,12 @@ std::string path = "default";
 static char inputPath[InputLength] = "default";
 // static char inputScale[InputLength] = "";
 float inputScale = 1;
+float inputAngle = 90;
 std::pmr::map<polyscope::SurfaceMesh*, float> initialScale;
 std::pmr::map<polyscope::SurfaceMesh*, float> currScale;
+static float moveX = 0;
+static float moveY = 0;
+static float moveZ = 0;
 
 void myCallback();
 void newMesh();
@@ -86,36 +91,55 @@ void myCallback() {
     }
     newMesh();
   }
+  ImGui::SameLine();
   if (ImGui::Button("removeMesh")) {
     // executes when button is pressed
     removeMesh();
   }
 
-  ImGui::LabelText("rotate label", "rotate:");
+  ImGui::Text("*rotate:");
   ImGui::SameLine();
   if (ImGui::Button("X")) {
     // executes when button is pressed
-    rotate(X, 90.0);
+    rotate(X, inputAngle);
   }
   ImGui::SameLine();
   if (ImGui::Button("Y")) {
     // executes when button is pressed
-    rotate(Y, 90.0);
+    rotate(Y, inputAngle);
   }
   ImGui::SameLine();
   if (ImGui::Button("Z")) {
     // executes when button is pressed
-    rotate(Z, 90.0);
+    rotate(Z, inputAngle);
   }
-  if (ImGui::Button("scale")) {
+  ImGui::SameLine();
+  ImGui::InputFloat("rotate angle", &inputAngle);
+
+  if (ImGui::SliderFloat(
+          "scale value", &inputScale, 0.1, 10.0, "%.3f",
+          ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat)) {
     // executes when button is pressed
     scale(inputScale);
   }
-  ImGui::SameLine();
 
-  ImGui::SliderFloat(
-      "scale value", &inputScale, 0.1f, 10.0f, "%.3f",
-      ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat);
+  if (ImGui::SliderFloat(
+          "moveX", &moveX, -10.0, 10.0, "%.3f",
+          ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat)) {
+    std::cout << moveX;
+  }
+
+  if (ImGui::SliderFloat(
+          "moveY", &moveY, -10.0, 10.0, "%.3f",
+          ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat)) {
+    std::cout << moveY;
+  }
+
+  if (ImGui::SliderFloat(
+          "moveZ", &moveZ, -10.0, 10.0, "%.3f",
+          ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat)) {
+    std::cout << moveZ;
+  }
 
   ImGui::PopItemWidth();
 }
@@ -135,7 +159,7 @@ void newMesh() {
   faceIndices.clear();
   meshGenerate(true, vertexPositions, faceIndices, path);
   auto* psMesh = polyscope::registerSurfaceMesh(getName(path), vertexPositions,
-                                             faceIndices);
+                                                faceIndices);
 
   transform(0, X, -std::get<0>(psMesh->boundingBox()), 1, psMesh->getName());
   // psMesh->rescaleToUnit();
