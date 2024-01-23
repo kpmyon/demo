@@ -19,7 +19,7 @@ void meshGenerate(bool readFromFile, std::vector<glm::vec3>& vertexPositions,
     defaultMeshGenerate(vertexPositions, faceIndices);
     return;
   }
-//dhaduhauh 
+
   /*
     // TODO 修改path的获取方式
     std::string path =
