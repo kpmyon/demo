@@ -242,8 +242,8 @@
   "cmake.preferredGenerators": [
     "MinGW Makefiles",
   ],
-  "cmake.cmakePath": "E:\\Program Files\\CMake\\bin\\cmake.exe",
-  "cmake.sourceDirectory": "E:/source/demo",
+  "cmake.cmakePath": "C:\\Program Files\\CMake\\bin\\cmake.exe",
+  "cmake.sourceDirectory": "D:\\实验室相关文档\\xiangu\\demo",
   /********
   * LLDB *
   ********/
