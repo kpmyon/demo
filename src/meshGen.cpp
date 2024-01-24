@@ -12,10 +12,11 @@ void string2faceInfo(std::string string, int &v, int &vt, int &vn);
  * @param path 待读取的文件路径
  */
 
-void meshGenerate(bool                              readFromFile,
-                  std::vector<glm::vec3>           &vertexPositions,
-                  std::vector<std::vector<size_t>> &faceIndices,
-                  const std ::string                path) {
+void meshGenerate(bool readFromFile, SimpleMesh &mesh, const std ::string path) {
+    std::vector<glm::vec3>           vertexPositions = mesh.vertexPositions;
+    std::vector<std::vector<size_t>> faceIndices     = mesh.faceIndices;
+    //std::string                      name            = mesh.name;
+
     if (!readFromFile) {
         defaultMeshGenerate(vertexPositions, faceIndices);
         return;
@@ -98,6 +99,10 @@ void meshGenerate(bool                              readFromFile,
         }
     }
     fin.close();
+    mesh.vertexPositions = vertexPositions;
+    // mesh.normalPositions
+    mesh.faceIndices = faceIndices;
+
 }
 
 void defaultMeshGenerate(std::vector<glm::vec3>           &vertexPositions,

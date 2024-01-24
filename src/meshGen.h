@@ -18,7 +18,7 @@
 #include "polyscope/polyscope.h"
 #include "polyscope/surface_mesh.h"
 
-void meshGenerate(bool                              readFromFile,
-                  std::vector<glm::vec3>           &vertexPositions,
-                  std::vector<std::vector<size_t>> &faceIndices,
-                  std::string                       path);
+#include "polyscope/simple_triangle_mesh.h"
+#include "simpleMesh.hpp"
+#include <vector>
+void meshGenerate(bool readFromFile, SimpleMesh &mesh, std::string path);

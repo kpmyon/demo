@@ -1,11 +1,11 @@
 # CMake 最低版本号要求
 cmake_minimum_required(VERSION 3.5...3.22)
- 
+
 # 项目信息
 project(demo VERSION 0.1.0 LANGUAGES C CXX)
- 
+
 #设置exe输出目录
-set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")  
+set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
 
 #设置编译类型
 set(CMAKE_BUILD_TYPE Debug)
@@ -13,8 +13,11 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
 
 #设置include
-#include_directories()
 
+#include_directories(${PROJECT_SOURCE_DIR}/external/include)
+
+
+#link_directories(${PROJECT_SOURCE_DIR}/external/lib)
 
 #设置编译目标
 aux_source_directory(src source)
@@ -24,6 +27,7 @@ add_executable(demo ${source})
 #设置外部库
 add_subdirectory("external/polyscope")
 target_link_libraries(demo polyscope)
+
 #backend
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

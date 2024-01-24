@@ -1,4 +1,5 @@
 #include <Shlobj.h>
+#include <__fwd/get.h>
 #include <minwindef.h>
 #include <stringapiset.h>
 #include <windows.h>
@@ -31,15 +32,16 @@
 #define Y glm::vec3(0.0, 1.0, 0.0)
 #define Z glm::vec3(0.0, 0.0, 1.0)
 
-std::vector<glm::vec3>           vertexPositions;
-std::vector<std::vector<size_t>> faceIndices;
+// std::vector<glm::vec3>           vertexPositions;
+// std::vector<std::vector<size_t>> faceIndices;
 std::string                      path                     = "default";
 static char                      inputPath[ InputLength ] = "default";
 // static char inputScale[InputLength] = "";
 float                             inputScale = 1;
 float                             inputAngle = 90;
-std::pmr::map<std::string, float> initialScale;
-std::pmr::map<std::string, float> currScale;
+// std::pmr::map<std::string, float> initialScale;
+// std::pmr::map<std::string, float> currScale;
+std::pmr::map<std::string, SimpleMesh> meshes;
 static float                      moveX  = 0;
 static float                      moveY  = 0;
 static float                      moveZ  = 0;
@@ -50,20 +52,10 @@ static float                      moveZ0 = 0;
 void                             myCallback();
 void                             newMesh();
 void                             removeMesh();
-void                             move(const glm::vec3 move);
+void                             move(glm::vec3 move);
 void                             rotate(glm::vec3 axis, float angle);
-void                             scale(const float scale);
-std::vector<glm::vec3>           transform(const float            angle,
-                                           const glm::vec3        axis,
-                                           const glm::vec3        move,
-                                           const float            scale,
-                                           const std::string     &name,
-                                           std::vector<glm::vec3> oldVertexPosition);
-std::vector<glm::vec3>           transform(const float     angle,
-                                           const glm::vec3 axis,
-                                           const glm::vec3 move,
-                                           const float     scale,
-                                           std::string     name);
+void                             scale(float scale);
+void transform(float angle, glm::vec3 axis, glm::vec3 move, float scale, SimpleMesh &mesh);
 std::tuple<glm::vec3, glm::vec3> getBoundingBox(std::vector<glm::vec3> vPositions);
 
 int main() {
@@ -72,7 +64,8 @@ int main() {
     polyscope::state::userCallback = myCallback;
 
     // meshGenerate(false, vertexPositions, faceIndices, path);
-
+    std::vector<glm::vec3>           vertexPositions;
+    std::vector<std::vector<size_t>> faceIndices;
     auto *psMesh = polyscope::registerSurfaceMesh(getName(path), vertexPositions, faceIndices);
     // Show the gui
     polyscope::show();
@@ -189,26 +182,34 @@ void newMesh() {
         return;
     }
 
-    vertexPositions.clear();
-    faceIndices.clear();
-    meshGenerate(true, vertexPositions, faceIndices, path);
+    std::vector<std::vector<size_t>> faceIndices;
+    std::vector<glm::vec3>           vertexPositions;
+    float                            initialScale;
+    float                            currScale;
 
-    initialScale.insert(std::pair<std::string, float>(name, 1.0));
-    currScale.insert(std::pair<std::string, float>(name, 1.0));
-    auto  boundingBox = getBoundingBox(vertexPositions);
+    SimpleMesh mesh;
+    meshGenerate(true, mesh, path);
+    mesh.name = name;
+
+    // initialScale.insert(std::pair<std::string, float>(name, 1.0));
+    // currScale.insert(std::pair<std::string, float>(name, 1.0));
+    auto  boundingBox = mesh.getBoundingBox();
     float lengthX     = std::get<1>(boundingBox).x - std::get<0>(boundingBox).x;
     float lengthY     = std::get<1>(boundingBox).y - std::get<0>(boundingBox).y;
     float lengthZ     = std::get<1>(boundingBox).z - std::get<0>(boundingBox).z;
     float length      = std::max(lengthX, lengthY);
     length            = std::max(length, lengthZ);
-    vertexPositions   = transform(0, X, glm::vec3(0), 1.0 / length, name, vertexPositions);
-    currScale[ name ] = 1.0; /*
+    transform(0, X, glm::vec3(0) - std::get<0>(boundingBox), 1.0 / length, mesh);
+    // currScale[ name ] = 1.0;
+    mesh.currScale = 1.0;
+    /*
        vertexPositions = transform(0, X, glm::vec3(0) - std::get<0>(boundingBox),
                                    1.0, name, vertexPositions);*/
-    boundingBox = getBoundingBox(vertexPositions);
-
-    // psMesh->rescaleToUnit();
-    auto *psMesh = polyscope::registerSurfaceMesh(name, vertexPositions, faceIndices);
+    // boundingBox = getBoundingBox(vertexPositions);
+    //  psMesh->rescaleToUnit();
+    meshes.insert(std::pair<std::string, SimpleMesh>(name, mesh));
+    auto *psMesh =
+        polyscope::registerSurfaceMesh(mesh.name, mesh.vertexPositions, mesh.faceIndices);
     polyscope::view::lookAt(glm::vec3(2.5, 2, 0), glm::vec3(0));
 }
 /**
@@ -217,23 +218,27 @@ void newMesh() {
  */
 void removeMesh() {
     polyscope::removeSurfaceMesh(getName(inputPath));
-    initialScale.erase(getName(inputPath));
-    currScale.erase(getName(inputPath));
+    meshes.erase(getName(inputPath));
 }
 
 void move(const glm::vec3 move) {
-    polyscope::getSurfaceMesh(getName(inputPath))
-        ->updateVertexPositions(transform(0, X, move, 1, getName(inputPath)));
+    auto mesh = meshes[ getName(inputPath) ];
+    transform(0, X, move, mesh.currScale, mesh);
+    polyscope::getSurfaceMesh(mesh.name)->updateVertexPositions(mesh.vertexPositions);
+    meshes[ mesh.name ] = mesh;
 }
 
 void rotate(const glm::vec3 axis, const float angle) {
-    polyscope::getSurfaceMesh(getName(inputPath))
-        ->updateVertexPositions(
-            transform(angle, axis, glm::vec3(0.0, 0.0, 0.0), 1, getName(inputPath)));
+    auto mesh = meshes[ getName(inputPath) ];
+    transform(angle, axis, glm::vec3(0.0, 0.0, 0.0), mesh.currScale, mesh);
+    polyscope::getSurfaceMesh(mesh.name)->updateVertexPositions(mesh.vertexPositions);
+    meshes[ mesh.name ] = mesh;
 }
 void scale(const float scale) {
-    polyscope::getSurfaceMesh(getName(inputPath))
-        ->updateVertexPositions(transform(0, X, glm::vec3(0.0, 0.0, 0.0), scale, getName(path)));
+    auto mesh = meshes[ getName(inputPath) ];
+    transform(0, X, glm::vec3(0.0, 0.0, 0.0), scale, mesh);
+    polyscope::getSurfaceMesh(mesh.name)->updateVertexPositions(mesh.vertexPositions);
+    meshes[ mesh.name ] = mesh;
 }
 
 /**
@@ -246,71 +251,34 @@ void scale(const float scale) {
  * @param name 待变换模型名
  * @param oldVertexPosition 变换的模型的顶点
  */
-std::vector<glm::vec3> transform(const float            angle,
-                                 const glm::vec3        axis,
-                                 const glm::vec3        move,
-                                 const float            scale,
-                                 const std::string     &name,
-                                 std::vector<glm::vec3> oldVertexPosition) {
+void transform(const float     angle,
+               const glm::vec3 axis,
+               const glm::vec3 move,
+               const float     scale,
+               SimpleMesh     &mesh) {
     // std::string inputPathStr(inputPath);
     //  std::string name = getName(inputPathStr);
     // auto* psMesh = polyscope::getSurfaceMesh(name);
     // std::vector<glm::vec3> oldVertexPosition = psMesh->vertexPositions.data;
     std::vector<glm::vec3> newVertexPosition;
 
-    glm::mat4x4 transform = glm::mat4x4(1.0);
-    transform             = glm::translate(transform, move);
-    transform             = glm::rotate(transform, angle, axis);
+    glm::mat4x4 trans = glm::mat4x4(1.0);
+    trans             = glm::translate(trans, move);
+    trans             = glm::rotate(trans, glm::radians(angle), axis);
     float newScale =
-        scale * static_cast<float>(initialScale[ name ]) / static_cast<float>(currScale[ name ]);
-    transform         = glm::scale(transform, glm::vec3(newScale));
-    currScale[ name ] = newScale * currScale[ name ];
-    std::for_each(oldVertexPosition.begin(),
-                  oldVertexPosition.end(),
-                  [ &newVertexPosition, &transform ](glm::vec3 point) {
+        scale * static_cast<float>(mesh.initialScale) / static_cast<float>(mesh.currScale);
+    trans = glm::scale(trans, glm::vec3(newScale));
+
+    mesh.currScale = newScale * mesh.currScale;
+    std::for_each(mesh.vertexPositions.begin(),
+                  mesh.vertexPositions.end(),
+                  [ &newVertexPosition, &trans ](glm::vec3 point) {
                       glm::vec4 newVec = glm::vec4(point, 1.0);
-                      newVertexPosition.emplace_back(transform * newVec);
+                      newVertexPosition.emplace_back(trans * newVec);
                   });
 
     // psMesh->updateVertexPositions(newVertexPosition);
-    return newVertexPosition;
-}
-std::vector<glm::vec3> transform(const float     angle,
-                                 const glm::vec3 axis,
-                                 const glm::vec3 move,
-                                 const float     scale,
-                                 std::string     name) {
-    auto psMesh = polyscope::getSurfaceMesh(name);
-    return transform(angle, axis, move, scale, name, psMesh->vertexPositions.data);
-}
-std::tuple<glm::vec3, glm::vec3> getBoundingBox(std::vector<glm::vec3> vPositions) {
-    float minX = FLT_MAX;
-    float minY = FLT_MAX;
-    float minZ = FLT_MAX;
-    float maxX = -FLT_MAX;
-    float maxY = -FLT_MAX;
-    float maxZ = -FLT_MAX;
+    mesh.vertexPositions = newVertexPosition;
 
-    std::for_each(vPositions.begin(), vPositions.end(), [ & ](glm::vec3 point) {
-        if (minX > point.x) {
-            minX = point.x;
-        }
-        if (minY > point.y) {
-            minY = point.y;
-        }
-        if (minZ > point.z) {
-            minZ = point.z;
-        }
-        if (maxX < point.x) {
-            maxX = point.x;
-        }
-        if (maxY < point.y) {
-            maxY = point.y;
-        }
-        if (maxZ < point.z) {
-            maxZ = point.z;
-        }
-    });
-
-    return std::make_tuple<glm::vec3, glm::vec3>({minX, minY, minZ}, {maxX, maxY, maxZ});
+    // return newVertexPosition;
 }
